@@ -1,0 +1,133 @@
+---
+title: "Regresseion Model - Assignment"
+author: "Manojit Saha"
+date: "28 August 2016"
+output: html_document
+---
+
+## Executive Summary
+You work for Motor Trend, a magazine about the automobile industry. Looking at a data set of a collection of cars, they are interested in exploring the relationship between a set of variables and miles per gallon (MPG) (outcome). They are particularly interested in the following two questions:
+
+- "Is an automatic or manual transmission better for MPG"
+- "Quantify the MPG difference between automatic and manual transmissions"
+
+Using Regeression models and Hypothesis testing we have tried to measure the impact of transmission on fuel efficiency. It is found that there are other variables too which impact the mileage.The final model results indicates that weight and quarter mile time (acceleration) have signficant impact in quantifying the difference of mpg between automatic and manual transmission cars.
+
+
+## The Data Set
+The data set was extracted from the 1974 edition of Motor Trend US Magazine and it deals with 1973 - 1974 models. It consists of 32 observations on 11 variables:
+
+- mpg: Miles per US gallon
+- cyl: Number of cylinders
+- disp: Displacement (cubic inches)
+- hp: Gross horsepower
+- drat: Rear axle ratio
+- wt: Weight (lb / 1000)
+- qsec: 1 / 4 mile time
+- vs: V/S
+- am: Transmission (0 = automatic, 1 = manual)
+- gear: Number of forward gears
+- carb: Number of carburetors
+
+### Load Dataset, Print Summary
+
+
+```{r echo = TRUE}
+library(ggplot2)
+data(mtcars)
+dim(mtcars)
+names(mtcars)
+mtcars[1:5, ]
+
+```
+From this dataset we need to find answers of the following questions:
+
+- Is an automatic or manual transmission better for MPG
+- Quantify the MPG difference between automatic and manual transmissions
+
+### Inference
+
+Run a Hypothesis Test as MPG vs. transmission to check if they are co-related. Perform Two Sample T-test.
+
+```{r echo = TRUE}
+result <- t.test(mtcars$mpg ~ mtcars$am)
+result$p.value
+result$estimate
+```
+Since p value is .00137, we reject our null hypothesis. The mileage of a manual car is 7 miles higher than that of an Automatic one.
+
+### Regression Analysis
+
+```{r echo= TRUE}
+fullModel <- lm(mpg ~ ., data=mtcars)
+summary(fullModel)
+
+```
+
+This model can explain about 78% of the MPG variable and none of the coeffients are 95% of the confidance level.
+So we need to check if inclusion of some other variable can give statistically significant result.
+
+```{r echo=TRUE}
+amIntWtModel<-lm(mpg ~ wt + qsec + am + wt:am, data=mtcars)
+summary(amIntWtModel)
+```
+This comes close to 88% confidence interval, but it should be closer to 95%
+
+So let's try another model
+
+```{r echo=TRUE}
+amModel<-lm(mpg ~ am, data=mtcars)
+summary(amModel)
+```
+
+This model is not as good as the earlier one and it seems variation os mpg not only related to transmission, but there is (are) something else.
+
+```{r echo=TRUE, results='hide'}
+anova(amModel, fullModel, amIntWtModel) 
+confint(amIntWtModel)
+```
+The model with highest Adjusted R-squared value, "mpg ~ wt + qsec + am + wt:am" is the best of all options here.
+
+```{r echo=TRUE}
+summary(amIntWtModel)$coef
+```
+
+The result shows that when "wt" (weight lb/1000) and "qsec" (1/4 mile time) remain constant, cars with manual transmission add 14.079 + (-4.141)*wt more MPG (miles per gallon) on average than cars with automatic transmission. 
+
+## Appendix: Plots and Figures
+
+### 1. Boxplot - MPG vs. Transmission
+
+```{r echo=TRUE}
+boxplot(mtcars$mpg ~ mtcars$am, xlab="Transmission (0 = Automatic, 1 = Manual)", ylab="MPG", col=(c("gold","darkgreen")), main="Boxplot of MPG vs. Transmission")
+
+```
+
+
+### 2. Pair Graph of Motor Trend Car Road Tests
+
+```{r echo=TRUE}
+pairs(mtcars, panel=panel.smooth, main="Pair Graph of Motor Trend Car Road Tests", cex = 1.5, pch = 24, bg = "light blue", cex.labels = 2, font.labels = 2)
+
+```
+
+### 3. Scatter Plot of MPG vs. Weight by Transmission
+
+```{r echo=TRUE}
+g2 <- ggplot(mtcars,aes(x=wt,y=mpg,colour=am))+geom_point(size=5)
+g2
+
+```
+
+### 4. Residual Plots
+
+```{r echo=TRUE}
+par(mfrow = c(2, 2))
+plot(amIntWtModel)
+```
+
+
+
+
+
+
